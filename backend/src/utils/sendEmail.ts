@@ -7,56 +7,25 @@ interface EmailOptions {
   text: string;
   html: string;
 }
+import { Resend } from "resend";
 
-const sendEmail = async ({
-  to,
-  subject,
-  text,
-  html,
-}: EmailOptions): Promise<void> => {
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
   try {
-    //////////////////////////////////////////////////////
-    // CREATE TRANSPORTER
-    //////////////////////////////////////////////////////
-
-    const transporter = nodemailer.createTransport({
-  service: "gmail",  // isko hatao
-  host: "smtp.gmail.com",  // ye add karo
-  port: 465,               // ye add karo
-  secure: true,            // ye add karo
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-      connectionTimeout: 10000,  // ye add karo
-  greetingTimeout: 10000,    // ye add karo
-  socketTimeout: 15000,
-});
-
-    //////////////////////////////////////////////////////
-    // MAIL OPTIONS
-    //////////////////////////////////////////////////////
-
-    const mailOptions = {
-      from: `"TMS" <${process.env.EMAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: "TMS <onboarding@resend.dev>", // free tier mein ye use karo
       to,
       subject,
-      text,
       html,
-    };
+    });
 
-    //////////////////////////////////////////////////////
-    // SEND EMAIL
-    //////////////////////////////////////////////////////
+    if (error) throw new Error(error.message);
 
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log("Email sent:", info.response);
+    console.log("Email sent:", data);
 
   } catch (error: any) {
-
     console.error("Error sending email:", error);
-
     throw new ApiError(500, "Email sending failed");
   }
 };
