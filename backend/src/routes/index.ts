@@ -1,0 +1,50 @@
+// routes/index.ts
+
+import { Router } from "express";
+
+import authRoutes from "../modules/auth/auth.routes";
+import userRoutes from "../modules/user/user.routes";
+import projectRoutes from "../modules/project/project.routes";
+import taskRoutes from "../modules/task/task.routes";
+import reportRoutes from "../modules/report/report.routes";
+
+const router = Router();
+
+//////////////////////////////////////////////////////
+// HEALTH CHECK
+//////////////////////////////////////////////////////
+
+router.get("/health", (req, res) => {
+
+  return res.status(200).json({
+    success: true,
+    message: "Server is running successfully",
+  });
+
+});
+
+//////////////////////////////////////////////////////
+// AUTH ROUTES
+//////////////////////////////////////////////////////
+
+router.use("/auth", authRoutes);
+
+//////////////////////////////////////////////////////
+// USER ROUTES
+//////////////////////////////////////////////////////
+
+router.use("/users", userRoutes);
+router.use("/reports", reportRoutes);
+//////////////////////////////////////////////////////
+// PROJECT ROUTES
+//////////////////////////////////////////////////////
+
+router.use("/projects", projectRoutes);
+
+//////////////////////////////////////////////////////
+// TASK ROUTES
+//////////////////////////////////////////////////////
+
+router.use("/tasks", taskRoutes);
+
+export default router;

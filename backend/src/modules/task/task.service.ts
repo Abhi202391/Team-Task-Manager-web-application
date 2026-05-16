@@ -1,0 +1,219 @@
+// task.service.ts
+
+import {
+  AddTaskAttachmentDto,
+  CreateTaskDto,
+  UpdateTaskDto,
+} from "./task.dto";
+
+import { TaskRepository } from "./task.repository";
+
+export class TaskService {
+
+  private taskRepository =
+    new TaskRepository();
+
+  //////////////////////////////////////////////////////
+  // CREATE TASK
+  //////////////////////////////////////////////////////
+
+  async createTask(
+    data: CreateTaskDto,
+    createdById: string
+  ) {
+
+    const {
+      assignedToIds = [],
+      ...restData
+    } = data;
+
+    //////////////////////////////////////////////////////
+    // PAYLOAD
+    //////////////////////////////////////////////////////
+
+    const payload = {
+
+      ...restData,
+
+      dueDate: data.dueDate
+        ? new Date(data.dueDate)
+        : null,
+
+      //////////////////////////////////////////////////////
+      // TASK ASSIGNEES
+      //////////////////////////////////////////////////////
+
+      assignees: {
+        create: assignedToIds.map(
+          (userId) => ({
+            userId,
+          })
+        ),
+      },
+    };
+
+    //////////////////////////////////////////////////////
+    // CREATE TASK
+    //////////////////////////////////////////////////////
+
+    return this.taskRepository.create(
+      payload,
+      createdById
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // GET ALL TASKS
+  //////////////////////////////////////////////////////
+
+  async getAllTasks() {
+
+    return this.taskRepository.findAll();
+  }
+
+  //////////////////////////////////////////////////////
+  // GET TASK BY ID
+  //////////////////////////////////////////////////////
+
+  async getTaskById(id: string) {
+
+    const task =
+      await this.taskRepository.findById(id);
+
+    if (!task) {
+
+      throw new Error(
+        "Task not found"
+      );
+    }
+
+    return task;
+  }
+
+  //////////////////////////////////////////////////////
+  // GET TASKS BY PROJECT
+  //////////////////////////////////////////////////////
+
+  async getTasksByProject(
+    projectId: string
+  ) {
+
+    return this.taskRepository.findByProjectId(
+      projectId
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // UPDATE TASK
+  //////////////////////////////////////////////////////
+
+  async updateTask(
+    id: string,
+    data: UpdateTaskDto
+  ) {
+
+    //////////////////////////////////////////////////////
+    // CHECK TASK EXISTS
+    //////////////////////////////////////////////////////
+
+    await this.getTaskById(id);
+
+    const {
+      assignedToIds,
+      ...restData
+    } = data;
+
+    //////////////////////////////////////////////////////
+    // PAYLOAD
+    //////////////////////////////////////////////////////
+
+    const payload: any = {
+
+      ...restData,
+
+      dueDate: data.dueDate
+        ? new Date(data.dueDate)
+        : undefined,
+    };
+
+    //////////////////////////////////////////////////////
+    // UPDATE ASSIGNEES
+    //////////////////////////////////////////////////////
+
+    if (assignedToIds) {
+
+      payload.assignees = {
+
+        //////////////////////////////////////////////////////
+        // REMOVE OLD USERS
+        //////////////////////////////////////////////////////
+
+        deleteMany: {},
+
+        //////////////////////////////////////////////////////
+        // ADD NEW USERS
+        //////////////////////////////////////////////////////
+
+        create: assignedToIds.map(
+          (userId) => ({
+            userId,
+          })
+        ),
+      };
+    }
+
+    //////////////////////////////////////////////////////
+    // UPDATE TASK
+    //////////////////////////////////////////////////////
+
+    return this.taskRepository.update(
+      id,
+      payload
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // DELETE TASK
+  //////////////////////////////////////////////////////
+
+  async deleteTask(id: string) {
+
+    await this.getTaskById(id);
+
+    return this.taskRepository.delete(
+      id
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // ADD ATTACHMENT
+  //////////////////////////////////////////////////////
+
+  async addAttachment(
+    taskId: string,
+    data: AddTaskAttachmentDto
+  ) {
+
+    await this.getTaskById(
+      taskId
+    );
+
+    return this.taskRepository.addAttachment(
+      taskId,
+      data
+    );
+  }
+
+  //////////////////////////////////////////////////////
+  // DELETE ATTACHMENT
+  //////////////////////////////////////////////////////
+
+  async deleteAttachment(
+    id: string
+  ) {
+
+    return this.taskRepository.deleteAttachment(
+      id
+    );
+  }
+}

@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+//////////////////////////////////////////////////////
+// USER MODEL
+//////////////////////////////////////////////////////
+
+model User {
+  id String @id @default(uuid())
+
+  name     String
+  email    String @unique
+  password String
+
+  phone String? @db.VarChar(20)
+
+  profileImage String?
+
+  role UserRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //////////////////////////////////////////////////////
+  // RELATIONS
+  //////////////////////////////////////////////////////
+
+  // Projects created by user
+  createdProjects Project[] @relation("ProjectCreator")
+
+  // Projects user is member of
+  projectMembers ProjectMember[]
+
+  // Tasks assigned to user
+  taskAssignments TaskAssignee[]
+
+  // Tasks created by user
+  createdTasks Task[] @relation("CreatedTasks")
+}
+
+//////////////////////////////////////////////////////
+// PROJECT MODEL
+//////////////////////////////////////////////////////
+
+model Project {
+  id String @id @default(uuid())
+
+  name String
+
+  description String? @db.Text
+
+  status ProjectStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //////////////////////////////////////////////////////
+  // FOREIGN KEYS
+  //////////////////////////////////////////////////////
+
+  createdById String
+
+  //////////////////////////////////////////////////////
+  // RELATIONS
+  //////////////////////////////////////////////////////
+
+  creator User @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  members ProjectMember[]
+
+  tasks Task[]
+}
+
+//////////////////////////////////////////////////////
+// PROJECT MEMBERS
+//////////////////////////////////////////////////////
+
+model ProjectMember {
+  id String @id @default(uuid())
+
+  projectId String
+  userId    String
+
+  joinedAt DateTime @default(now())
+
+  //////////////////////////////////////////////////////
+  // RELATIONS
+  //////////////////////////////////////////////////////
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  //////////////////////////////////////////////////////
+  // UNIQUE CONSTRAINT
+  //////////////////////////////////////////////////////
+
+  @@unique([projectId, userId])
+}
+
+//////////////////////////////////////////////////////
+// TASK MODEL
+//////////////////////////////////////////////////////
+
+model Task {
+  id String @id @default(uuid())
+
+  title String
+
+  description String? @db.Text
+
+  priority TaskPriority @default(MEDIUM)
+
+  status TaskStatus @default(TODO)
+
+  dueDate DateTime?
+
+  taskProgress Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //////////////////////////////////////////////////////
+  // FOREIGN KEYS
+  //////////////////////////////////////////////////////
+
+  projectId String
+
+  createdById String
+
+  //////////////////////////////////////////////////////
+  // RELATIONS
+  //////////////////////////////////////////////////////
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdBy User @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
+
+  //////////////////////////////////////////////////////
+  // MANY TO MANY TASK ASSIGNEES
+  //////////////////////////////////////////////////////
+
+  assignees TaskAssignee[]
+
+  //////////////////////////////////////////////////////
+  // ATTACHMENTS
+  //////////////////////////////////////////////////////
+
+  attachments TaskAttachment[]
+}
+
+//////////////////////////////////////////////////////
+// TASK ASSIGNEES
+//////////////////////////////////////////////////////
+
+model TaskAssignee {
+  id String @id @default(uuid())
+
+  taskId String
+  userId String
+
+  assignedAt DateTime @default(now())
+
+  //////////////////////////////////////////////////////
+  // RELATIONS
+  //////////////////////////////////////////////////////
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  //////////////////////////////////////////////////////
+  // UNIQUE CONSTRAINT
+  //////////////////////////////////////////////////////
+
+  @@unique([taskId, userId])
+}
+
+//////////////////////////////////////////////////////
+// TASK ATTACHMENTS / PHOTOS
+//////////////////////////////////////////////////////
+
+model TaskAttachment {
+  id String @id @default(uuid())
+
+  fileUrl String
+
+  fileName String?
+
+  uploadedAt DateTime @default(now())
+
+  //////////////////////////////////////////////////////
+  // FOREIGN KEYS
+  //////////////////////////////////////////////////////
+
+  taskId String
+
+  //////////////////////////////////////////////////////
+  // RELATIONS
+  //////////////////////////////////////////////////////
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
