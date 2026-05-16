@@ -20,12 +20,15 @@ const sendEmail = async ({
     //////////////////////////////////////////////////////
 
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+  service: "gmail",  // isko hatao
+  host: "smtp.gmail.com",  // ye add karo
+  port: 465,               // ye add karo
+  secure: true,            // ye add karo
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
     //////////////////////////////////////////////////////
     // MAIL OPTIONS
